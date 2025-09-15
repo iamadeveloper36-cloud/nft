@@ -1,0 +1,287 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  email         String   @unique
+  password      String
+  firstName     String?
+  lastName      String?
+  profileImage  String?
+  bio           String?  @db.Text
+  website       String?
+  twitter       String?
+  instagram     String?
+  discord       String?
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  isAdmin       Boolean  @default(false)
+  walletAddress String?  @unique
+  totalVolume   Float    @default(0)
+  totalSales    Int      @default(0)
+  ethBalance    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  nfts          NFT[]
+  bids          Bid[]
+  transactions  Transaction[]
+  activities    Activity[]
+  sentMessages  Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  favorites     UserFavorite[]
+  followers     UserFollow[] @relation("UserFollowers")
+  following     UserFollow[] @relation("UserFollowing")
+  walletDeposits WalletDeposit[]
+  walletWithdrawals WalletWithdrawal[]
+
+  @@map("users")
+}
+
+
+model NFT {
+  id          String      @id @default(cuid())
+  name        String
+  description String?     @db.Text
+  image       String
+  metadata    Json?
+  price       Float?
+  status      NFTStatus   @default(PENDING)
+  isListed    Boolean     @default(false)
+  mintingFee  Float       @default(0.001)
+  
+  // Auction fields
+  isAuction   Boolean     @default(false)
+  auctionStartPrice Float?
+  auctionReservePrice Float?
+  auctionEndTime DateTime?
+  auctionStatus AuctionStatus @default(NOT_AUCTION)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  ownerId     String
+  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bids        Bid[]
+  transactions Transaction[]
+  activities  Activity[]
+  favorites   UserFavorite[]
+
+  @@map("nfts")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  amount    Float
+  status    BidStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  nftId     String
+  nft       NFT       @relation(fields: [nftId], references: [id], onDelete: Cascade)
+  bidderId  String
+  bidder    User      @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@map("bids")
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  type        TransactionType
+  amount      Float
+  status      TransactionStatus @default(PENDING)
+  hash        String?           @unique
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nftId       String?
+  nft         NFT?              @relation(fields: [nftId], references: [id], onDelete: SetNull)
+
+  @@map("transactions")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  messageType String   @default("text")
+  metadata    Json?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model UserFavorite {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nftId  String
+  nft    NFT    @relation(fields: [nftId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, nftId])
+  @@map("user_favorites")
+}
+
+model UserFollow {
+  id          String @id @default(cuid())
+  followerId  String
+  follower    User   @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User   @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("user_follows")
+}
+
+model WalletDeposit {
+  id          String            @id @default(cuid())
+  amount      Float
+  txHash      String?           @unique
+  status      WalletTxStatus    @default(PENDING)
+  adminNotes  String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_deposits")
+}
+
+model WalletWithdrawal {
+  id          String            @id @default(cuid())
+  amount      Float
+  toAddress   String
+  txHash      String?           @unique
+  status      WalletTxStatus    @default(PENDING)
+  adminNotes  String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_withdrawals")
+}
+
+model Activity {
+  id          String        @id @default(cuid())
+  type        ActivityType
+  description String
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nftId       String?
+  nft         NFT?          @relation(fields: [nftId], references: [id], onDelete: SetNull)
+
+  @@map("activities")
+}
+
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  ethAddress  String   @unique
+  qrCodeImage String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("payment_methods")
+}
+
+// Enums
+enum NFTStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum AuctionStatus {
+  NOT_AUCTION
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum TransactionType {
+  MINTING_FEE
+  WALLET_FUND
+  NFT_PURCHASE
+  BID_PLACEMENT
+  BID_ACCEPTANCE
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WalletTxStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  FAILED
+}
+
+enum ActivityType {
+  NFT_CREATED
+  NFT_UPDATED
+  NFT_DELETED
+  NFT_LISTED
+  NFT_UNLISTED
+  NFT_SOLD
+  NFT_PURCHASED
+  BID_PLACED
+  BID_ACCEPTED
+  BID_REJECTED
+  NFT_FAVORITED
+  NFT_UNFAVORITED
+  PROFILE_UPDATED
+  WALLET_CONNECTED
+  WALLET_DEPOSIT
+  WALLET_WITHDRAWAL
+  WALLET_DEPOSIT_APPROVED
+  WALLET_DEPOSIT_REJECTED
+  WALLET_WITHDRAWAL_APPROVED
+  WALLET_WITHDRAWAL_REJECTED
+}

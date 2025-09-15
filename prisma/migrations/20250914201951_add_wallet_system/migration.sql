@@ -1,0 +1,42 @@
+-- AlterTable
+ALTER TABLE `activities` MODIFY `type` ENUM('NFT_CREATED', 'NFT_UPDATED', 'NFT_DELETED', 'NFT_LISTED', 'NFT_UNLISTED', 'NFT_SOLD', 'NFT_PURCHASED', 'BID_PLACED', 'BID_ACCEPTED', 'BID_REJECTED', 'NFT_FAVORITED', 'NFT_UNFAVORITED', 'PROFILE_UPDATED', 'WALLET_CONNECTED', 'WALLET_DEPOSIT', 'WALLET_WITHDRAWAL', 'WALLET_DEPOSIT_APPROVED', 'WALLET_DEPOSIT_REJECTED', 'WALLET_WITHDRAWAL_APPROVED', 'WALLET_WITHDRAWAL_REJECTED') NOT NULL;
+
+-- AlterTable
+ALTER TABLE `users` ADD COLUMN `ethBalance` DOUBLE NOT NULL DEFAULT 0;
+
+-- CreateTable
+CREATE TABLE `wallet_deposits` (
+    `id` VARCHAR(191) NOT NULL,
+    `amount` DOUBLE NOT NULL,
+    `txHash` VARCHAR(191) NULL,
+    `status` ENUM('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'FAILED') NOT NULL DEFAULT 'PENDING',
+    `adminNotes` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `wallet_deposits_txHash_key`(`txHash`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `wallet_withdrawals` (
+    `id` VARCHAR(191) NOT NULL,
+    `amount` DOUBLE NOT NULL,
+    `toAddress` VARCHAR(191) NOT NULL,
+    `txHash` VARCHAR(191) NULL,
+    `status` ENUM('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'FAILED') NOT NULL DEFAULT 'PENDING',
+    `adminNotes` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `wallet_withdrawals_txHash_key`(`txHash`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `wallet_deposits` ADD CONSTRAINT `wallet_deposits_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `wallet_withdrawals` ADD CONSTRAINT `wallet_withdrawals_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
