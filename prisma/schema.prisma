@@ -41,6 +41,7 @@ model User {
   sentMessages  Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   favorites     UserFavorite[]
+  wonAuctions   NFT[] @relation("AuctionWinner")
   followers     UserFollow[] @relation("UserFollowers")
   following     UserFollow[] @relation("UserFollowing")
   walletDeposits WalletDeposit[]
@@ -67,6 +68,9 @@ model NFT {
   auctionReservePrice Float?
   auctionEndTime DateTime?
   auctionStatus AuctionStatus @default(NOT_AUCTION)
+  winnerId    String?
+  winner      User?       @relation("AuctionWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  isWinnerSelected Boolean @default(false)
   
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -237,6 +241,7 @@ enum BidStatus {
   ACCEPTED
   REJECTED
   EXPIRED
+  WON
 }
 
 enum TransactionType {

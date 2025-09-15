@@ -12,7 +12,10 @@ const emailConfig = {
     tls: {
         ciphers: 'SSLv3',
         rejectUnauthorized: false
-    }
+    },
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000, // 30 seconds
+    socketTimeout: 60000 // 60 seconds
 };
 
 // Debug: Check if environment variables are loaded
@@ -24,14 +27,14 @@ console.log('Using password:', process.env.OUTLOOK_APP_PASSWORD ? 'App Password 
 // Create transporter
 const transporter = nodemailer.createTransport(emailConfig);
 
-// Verify connection configuration
-transporter.verify((error, success) => {
-    if (error) {
-        console.log('Email service error:', error);
-    } else {
-        console.log('Email service is ready to send messages');
-    }
-});
+// Verify connection configuration (commented out to prevent startup crashes)
+// transporter.verify((error, success) => {
+//     if (error) {
+//         console.log('Email service error:', error);
+//     } else {
+//         console.log('Email service is ready to send messages');
+//     }
+// });
 
 // Email templates
 const emailTemplates = {
@@ -59,7 +62,7 @@ const emailTemplates = {
                         </ul>
                     </div>
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard" 
+                        <a href="${process.env.FRONTEND_URL || 'https://p-api.codesensei.co'}/dashboard" 
                            style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                             Start Exploring
                         </a>
@@ -93,7 +96,7 @@ const emailTemplates = {
                     </p>
                     <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
                         <p style="margin: 0 0 15px 0; font-weight: bold;">Click the button below to reset your password:</p>
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}" 
+                        <a href="${process.env.FRONTEND_URL || 'https://p-api.codesensei.co'}/reset-password?token=${resetToken}" 
                            style="background: linear-gradient(135deg, #ef4444, #f97316); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                             Reset Password
                         </a>
@@ -131,7 +134,7 @@ const emailTemplates = {
                     </p>
                     <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
                         <p style="margin: 0 0 15px 0; font-weight: bold;">Click the button below to verify your email:</p>
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}" 
+                        <a href="${process.env.FRONTEND_URL || 'https://p-api.codesensei.co'}/verify-email?token=${verificationToken}" 
                            style="background: linear-gradient(135deg, #10b981, #3b82f6); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                             Verify Email Address
                         </a>
@@ -174,7 +177,7 @@ const emailTemplates = {
                         <p><strong>Date:</strong> ${new Date(transaction.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/wallet" 
+                        <a href="${process.env.FRONTEND_URL || 'https://p-api.codesensei.co'}/wallet" 
                            style="background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                             View Wallet
                         </a>

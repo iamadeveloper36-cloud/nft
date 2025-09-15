@@ -9,7 +9,7 @@ async function createAdmin() {
         const existingAdmin = await prisma.user.findFirst({
             where: {
                 OR: [
-                    { email: 'admin@demosea.com' },
+                    { email: 'admin@metaopenverse.com' },
                     { username: 'admin' }
                 ]
             }
@@ -30,11 +30,11 @@ async function createAdmin() {
         const admin = await prisma.user.create({
             data: {
                 username: 'admin',
-                email: 'admin@demosea.com',
+                email: 'admin@metaopenverse.com',
                 password: hashedPassword,
                 firstName: 'Admin',
                 lastName: 'User',
-                bio: 'Platform Administrator',
+                bio: 'MetaOpenVerse Platform Administrator',
                 isVerified: true,
                 isActive: true,
                 isAdmin: true,
@@ -44,7 +44,7 @@ async function createAdmin() {
         });
 
         console.log('✅ Admin user created successfully!');
-        console.log('Email: admin@demosea.com');
+        console.log('Email: admin@metaopenverse.com');
         console.log('Username: admin');
         console.log('Password: admin123');
         console.log('Is Admin: true');

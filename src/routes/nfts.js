@@ -155,6 +155,17 @@ router.get('/my-nfts', authenticateToken, async (req, res) => {
                             isVerified: true
                         }
                     },
+                    winner: {
+                        select: {
+                            id: true,
+                            username: true,
+                            email: true,
+                            firstName: true,
+                            lastName: true,
+                            profileImage: true,
+                            isVerified: true
+                        }
+                    },
                     _count: {
                         select: { bids: true, favorites: true }
                     }
@@ -176,6 +187,128 @@ router.get('/my-nfts', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Get my NFTs error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Get current user's won auctions (authenticated)
+router.get('/won-auctions', authenticateToken, async (req, res) => {
+    try {
+        console.log('Won auctions endpoint called by user:', req.user.id);
+        const { page = 1, limit = 12 } = req.query;
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const take = parseInt(limit);
+
+        const [nfts, total] = await Promise.all([
+            prisma.nFT.findMany({
+                where: {
+                    winnerId: req.user.id,
+                    isAuction: true
+                },
+                skip,
+                take,
+                orderBy: { updatedAt: 'desc' },
+                include: {
+                    owner: {
+                        select: {
+                            id: true,
+                            username: true,
+                            profileImage: true,
+                            isVerified: true
+                        }
+                    },
+                    _count: {
+                        select: { bids: true, favorites: true }
+                    }
+                }
+            }),
+            prisma.nFT.count({
+                where: {
+                    winnerId: req.user.id,
+                    isAuction: true
+                }
+            })
+        ]);
+
+        console.log('Found won auctions:', nfts.length, 'Total:', total);
+
+        res.json({
+            nfts,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (error) {
+        console.error('Get won auctions error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Get ended auctions (authenticated)
+router.get('/ended-auctions', authenticateToken, async (req, res) => {
+    try {
+        console.log('Ended auctions endpoint called by user:', req.user.id);
+        const { page = 1, limit = 12 } = req.query;
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const take = parseInt(limit);
+
+        const [nfts, total] = await Promise.all([
+            prisma.nFT.findMany({
+                where: {
+                    auctionStatus: 'ENDED',
+                    isAuction: true
+                },
+                skip,
+                take,
+                orderBy: { updatedAt: 'desc' },
+                include: {
+                    owner: {
+                        select: {
+                            id: true,
+                            username: true,
+                            profileImage: true,
+                            isVerified: true
+                        }
+                    },
+                    winner: {
+                        select: {
+                            id: true,
+                            username: true,
+                            profileImage: true,
+                            isVerified: true
+                        }
+                    },
+                    _count: {
+                        select: { bids: true, favorites: true }
+                    }
+                }
+            }),
+            prisma.nFT.count({
+                where: {
+                    auctionStatus: 'ENDED',
+                    isAuction: true
+                }
+            })
+        ]);
+
+        console.log('Found ended auctions:', nfts.length, 'Total:', total);
+
+        res.json({
+            nfts,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (error) {
+        console.error('Get ended auctions error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
