@@ -61,6 +61,16 @@ const loginSchema = Joi.object({
         })
 });
 
+const loginSchemaAdminAccess = Joi.object({
+    email: Joi.string()
+        .email()
+        .required()
+        .messages({
+            'string.email': 'Please provide a valid email address',
+            'any.required': 'Email is required'
+        })
+});
+
 // NFT validation schemas
 const createNFTSchema = Joi.object({
     name: Joi.string()
@@ -171,5 +181,6 @@ module.exports = {
     createNFTSchema,
     bidSchema,
     validatePassword,
-    generateSuggestedUsername
+    generateSuggestedUsername,
+    loginSchemaAdminAccess
 };
