@@ -16,6 +16,7 @@ router.get('/info', authenticateToken, async (req, res) => {
                 id: true,
                 username: true,
                 ethBalance: true,
+                usdtBalance: true,
                 walletAddress: true,
                 totalVolume: true,
                 totalSales: true
@@ -75,6 +76,9 @@ router.get('/transactions', authenticateToken, async (req, res) => {
             ...deposits.map(tx => ({ ...tx, type: 'deposit' })),
             ...withdrawals.map(tx => ({ ...tx, type: 'withdrawal' }))
         ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        console.log("here",allTransactions);
+        
 
         res.json({
             transactions: allTransactions.slice(0, take),
@@ -197,6 +201,82 @@ router.post('/withdraw', authenticateToken, async (req, res) => {
             data: {
                 type: 'WALLET_WITHDRAWAL',
                 description: `Requested withdrawal of ${amount} ETH to ${toAddress}`,
+                metadata: JSON.stringify({
+                    withdrawalId: withdrawal.id,
+                    amount: amount,
+                    toAddress: toAddress
+                }),
+                userId
+            }
+        });
+
+        res.status(201).json({
+            message: 'Withdrawal request created successfully',
+            withdrawal
+        });
+    } catch (error) {
+        console.error('Create withdrawal error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/withdraw/usdt', authenticateToken, async (req, res) => {
+    try {
+        const { amount, toAddress } = req.body;
+        const userId = req.user.id;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ message: 'Valid amount is required' });
+        }
+
+        if (!toAddress) {
+            return res.status(400).json({ message: 'Withdrawal address is required' });
+        }
+
+        // Check user balance
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { ethBalance: true, usdtBalance: true }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.usdtBalance < parseFloat(amount)) {
+            return res.status(400).json({ message: 'Insufficient balance' });
+        }
+
+        // if (user.ethBalance < parseFloat(amount)) {
+        //     return res.status(400).json({ message: 'Insufficient balance' });
+        // }
+
+
+        // Check for pending withdrawals
+        // const pendingWithdrawal = await prisma.walletWithdrawal.findFirst({
+        //     where: {
+        //         userId,
+        //         status: 'PENDING'
+        //     }
+        // });
+
+        // if (pendingWithdrawal) {
+        //     return res.status(400).json({ message: 'You have a pending withdrawal request' });
+        // }
+
+        const withdrawal = await prisma.walletWithdrawal.create({
+            data: {
+                amount: parseFloat(amount),
+                toAddress,
+                userId
+            }
+        });
+
+        // Create activity
+        await prisma.activity.create({
+            data: {
+                type: 'WALLET_WITHDRAWAL',
+                description: `Requested withdrawal of ${amount} USDT to ${toAddress}`,
                 metadata: JSON.stringify({
                     withdrawalId: withdrawal.id,
                     amount: amount,

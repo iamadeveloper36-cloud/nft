@@ -30,6 +30,7 @@ model User {
   totalVolume   Float    @default(0)
   totalSales    Int      @default(0)
   ethBalance    Float    @default(0)
+  usdtBalance    Float    @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

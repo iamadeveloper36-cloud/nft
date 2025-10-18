@@ -124,6 +124,7 @@ router.get('/users', async (req, res) => {
                     totalVolume: true,
                     totalSales: true,
                     ethBalance: true,
+                    usdtBalance: true,
                     createdAt: true,
                     _count: {
                         select: {
@@ -196,20 +197,21 @@ router.put('/users/:userId/status', async (req, res) => {
 router.put('/users/:userId/wallet', async (req, res) => {
     try {
         const { userId } = req.params;
-        const { ethBalance } = req.body;
+        const { ethBalance, usdtBalance } = req.body;
 
-        if (ethBalance === undefined || ethBalance < 0) {
-            return res.status(400).json({ message: 'Valid ETH balance is required' });
+        if (ethBalance === undefined || ethBalance < 0 || usdtBalance === undefined || usdtBalance < 0) {
+            return res.status(400).json({ message: 'Valid ETH/USDT balance is required' });
         }
 
         const user = await prisma.user.update({
             where: { id: userId },
-            data: { ethBalance: parseFloat(ethBalance) },
+            data: { ethBalance: parseFloat(ethBalance), usdtBalance: parseFloat(usdtBalance) },
             select: {
                 id: true,
                 username: true,
                 email: true,
-                ethBalance: true
+                ethBalance: true,
+                usdtBalance: true
             }
         });
 
