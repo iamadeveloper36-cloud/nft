@@ -588,8 +588,28 @@ router.post('/:id/bid', authenticateToken, async (req, res) => {
         }
 
         // Check if user has sufficient balance (simplified check)
+        console.log("user", req.user);
+
+        // wallet info
+        const userWallet = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: {
+                id: true,
+                username: true,
+                ethBalance: true,
+                walletAddress: true,
+                totalVolume: true,
+                totalSales: true
+            }
+        });
+
+        console.log(userWallet.ethBalance);
+
+
+        
+        
         // In a real app, you'd check actual wallet balance
-        const userBalance = 1.0; // Mock balance
+        const userBalance = userWallet.ethBalance; // Mock balance
         if (userBalance < amount) {
             return res.status(400).json({ message: 'Insufficient balance' });
         }
