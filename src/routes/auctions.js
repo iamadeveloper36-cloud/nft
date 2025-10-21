@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
 
         const {
             page = 1,
-            limit = 12,
+            limit = 50,
             status = 'LIVE', // LIVE, SCHEDULED, ENDED, CANCELLED
             sortBy = 'auctionEndTime',
             sortOrder = 'asc'
