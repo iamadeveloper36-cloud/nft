@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     try {
         const {
             page = 1,
-            limit = 12,
+            limit = 50,
             search = '',
             status = 'APPROVED',
             minPrice = 0,
@@ -126,7 +126,7 @@ router.get('/', async (req, res) => {
 router.get('/my-nfts', authenticateToken, async (req, res) => {
     try {
         console.log('My NFTs endpoint called by user:', req.user.id);
-        const { page = 1, limit = 12, status } = req.query;
+        const { page = 1, limit = 50, status } = req.query;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
@@ -195,7 +195,7 @@ router.get('/my-nfts', authenticateToken, async (req, res) => {
 router.get('/won-auctions', authenticateToken, async (req, res) => {
     try {
         console.log('Won auctions endpoint called by user:', req.user.id);
-        const { page = 1, limit = 12 } = req.query;
+        const { page = 1, limit = 50 } = req.query;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
@@ -252,7 +252,7 @@ router.get('/won-auctions', authenticateToken, async (req, res) => {
 router.get('/ended-auctions', authenticateToken, async (req, res) => {
     try {
         console.log('Ended auctions endpoint called by user:', req.user.id);
-        const { page = 1, limit = 12 } = req.query;
+        const { page = 1, limit = 50 } = req.query;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
