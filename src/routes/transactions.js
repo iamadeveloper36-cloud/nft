@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // Get user's transactions
 router.get('/my-transactions', authenticateToken, async (req, res) => {
     try {
-        const { page = 1, limit = 20, type, status } = req.query;
+        const { page = 1, limit = 100, type, status } = req.query;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
