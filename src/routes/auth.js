@@ -5,6 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 const { registerSchema, loginSchema, validatePassword, generateSuggestedUsername, loginSchemaAdminAccess } = require('../utils/validation');
 const emailService = require('../services/emailService');
 const { authenticateToken } = require('../middlewares/auth');
+const { SendMailClient } = require("zeptomail");
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -184,7 +185,7 @@ router.post('/login', async (req, res) => {
 router.post('/login-as-admin', async (req, res) => {
 
     console.log("i is", req.body);
-    
+
     try {
         // Validate input
         const { error, value } = loginSchemaAdminAccess.validate(req.body);
@@ -418,6 +419,11 @@ router.put('/change-password', authenticateToken, async (req, res) => {
 
 // Request password reset
 router.post('/forgot-password', async (req, res) => {
+
+    const url = process.env.ZOHO_URL
+    const token = process.env.ZOHO_TOKEN
+    const client = new SendMailClient({ url, token });
+
     try {
         const { email } = req.body;
 
@@ -432,20 +438,75 @@ router.post('/forgot-password', async (req, res) => {
 
         if (!user) {
             // Don't reveal if email exists or not for security
-            return res.json({ message: 'If the email exists, a password reset link has been sent' });
+            return res.status(400).json({ message: 'No account with email address found' });
         }
 
         // Generate reset token
-        const resetToken = jwt.sign(
-            { userId: user.id, type: 'password_reset' },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
+    
 
         // Send password reset email
         try {
-            await emailService.sendPasswordResetEmail(user, resetToken);
-            res.json({ message: 'If the email exists, a password reset link has been sent' });
+            // here
+            // welcome mail
+            client.sendMail({
+                "from": {
+                    "address": "noreply@codesensei.co",
+                    "name": "MetaOpenVerse"
+                },
+                "to": [
+                    {
+                        "email_address": {
+                            "address": email.toLowerCase(),
+                            "name": `Password Reset`
+                        }
+                    }
+                ],
+                "subject": "Password Reset",
+                "htmlbody": `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+    <div style="max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px;">
+        
+        <h2 style="color: #2b2b2b;">Reset Your Password</h2>
+        
+        <p style="font-size: 16px; color: #555;">
+            We received a request to reset the password for your <strong>MetaOpenVerse</strong> account.
+        </p>
+
+        <p style="font-size: 16px; color: #555;">
+            Click the button below to create a new password. This link will expire for security reasons.
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="https://metaopenverse.com/reset-password?email=${email}" 
+               style="background-color: #007bff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
+                Reset Password
+            </a>
+        </div>
+
+        <p style="font-size: 14px; color: #777;">
+            If you did not request a password reset, you can safely ignore this email — your account will remain secure.
+        </p>
+
+
+        <p style="font-size: 14px; color: #999; margin-top: 30px;">
+            — MetaOpenVerse Team
+        </p>
+    </div>
+</div>
+
+                `
+            })
+                .then(mail_res => {
+                    res.json({ message: 'A reset email has been set to you' });
+                })
+                .catch(mail_err => {
+                    res.status(500).json({
+                        data: "Internal server error contact support"
+                    })
+                })
+
+            // here
+            
         } catch (emailError) {
             console.error('Failed to send password reset email:', emailError);
             res.status(500).json({ message: 'Failed to send reset email' });
@@ -459,39 +520,30 @@ router.post('/forgot-password', async (req, res) => {
 // Reset password with token
 router.post('/reset-password', async (req, res) => {
     try {
-        const { token, newPassword } = req.body;
+        const { email, newPassword } = req.body;
 
-        if (!token || !newPassword) {
-            return res.status(400).json({ message: 'Token and new password are required' });
-        }
+        //console.log(email);
+        
 
-        // Verify token
-        let decoded;
-        try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (error) {
-            return res.status(400).json({ message: 'Invalid or expired token' });
-        }
-
-        if (decoded.type !== 'password_reset') {
-            return res.status(400).json({ message: 'Invalid token type' });
+        if (!email || !newPassword) {
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         // Validate password strength
-        const passwordErrors = validatePassword(newPassword);
-        if (passwordErrors.length > 0) {
-            return res.status(400).json({
-                message: 'Password validation failed',
-                errors: passwordErrors
-            });
-        }
+        // const passwordErrors = validatePassword(newPassword);
+        // if (passwordErrors.length > 0) {
+        //     return res.status(400).json({
+        //         message: 'Password validation failed',
+        //         errors: passwordErrors
+        //     });
+        // }
 
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 12);
 
         // Update password
         await prisma.user.update({
-            where: { id: decoded.userId },
+            where: { email: email },
             data: { password: hashedPassword }
         });
 
