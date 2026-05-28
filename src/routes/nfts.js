@@ -528,7 +528,7 @@ router.post('/', authenticateToken, upload.single('image'), async (req, res) => 
         await prisma.transaction.create({
             data: {
                 type: 'MINTING_FEE',
-                amount: parseFloat(process.env.MINTING_FEE_ETH || '0.001'),
+                amount: parseFloat(process.env.MINTING_FEE_ETH || '0.153'),
                 status: 'PENDING',
                 description: `Minting fee for NFT: ${name}`,
                 userId: req.user.id,
