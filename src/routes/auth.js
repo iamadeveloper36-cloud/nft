@@ -1,5 +1,4 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { registerSchema, loginSchema, validatePassword, generateSuggestedUsername, loginSchemaAdminAccess } = require('../utils/validation');
@@ -53,16 +52,12 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // Hash password
-        const saltRounds = 12;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
         // Create user
         const user = await prisma.user.create({
             data: {
                 username: username.toLowerCase(),
                 email: email.toLowerCase(),
-                password: hashedPassword,
+                password,
                 firstName: firstName || null,
                 lastName: lastName || null
             },
@@ -146,8 +141,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Check password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
+        if (password !== user.password) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
@@ -376,8 +370,7 @@ router.put('/change-password', authenticateToken, async (req, res) => {
         });
 
         // Verify current password
-        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
-        if (!isCurrentPasswordValid) {
+        if (currentPassword !== user.password) {
             return res.status(400).json({ message: 'Current password is incorrect' });
         }
 
@@ -400,14 +393,10 @@ router.put('/change-password', authenticateToken, async (req, res) => {
             }
         }
 
-        // Hash new password
-        const saltRounds = 12;
-        const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
-
         // Update password
         await prisma.user.update({
             where: { id: req.user.id },
-            data: { password: hashedNewPassword }
+            data: { password: newPassword }
         });
 
         res.json({ message: 'Password changed successfully' });
@@ -538,13 +527,10 @@ router.post('/reset-password', async (req, res) => {
         //     });
         // }
 
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 12);
-
         // Update password
         await prisma.user.update({
             where: { email: email },
-            data: { password: hashedPassword }
+            data: { password: newPassword }
         });
 
         res.json({ message: 'Password reset successfully' });
